@@ -10,8 +10,8 @@ const getEnvironment = (): Environment => {
   return {
     production: isProduction,
     apiBaseUrl: isProduction 
-      ? '/api' // Adjust this to your production API URL
-      : 'http://localhost:3001/api' // Development API URL
+      ? 'https://your-domain.com/api' // Update this to your production backend URL
+      : 'http://localhost:3001/api' // Development backend URL
   };
 };
 
