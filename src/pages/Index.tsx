@@ -5,12 +5,13 @@ import CategoryFilter from '@/components/CategoryFilter';
 import ArticleCard from '@/components/ArticleCard';
 import ArticleView from '@/components/ArticleView';
 import AdminPanel from '@/components/AdminPanel';
-import { categories } from '@/data/mockArticles';
 import { Article } from '@/types/Article';
 import { useArticles } from '@/hooks/useArticles';
+import { useCategories } from '@/hooks/useCategories';
 
 const Index = () => {
   const { articles, loading, error, saveArticle, deleteArticle, incrementViews } = useArticles();
+  const { categories } = useCategories();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -68,8 +69,12 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 mb-4">⚠️</div>
-          <p className="text-gray-600">{error}</p>
+          <div className="text-red-500 mb-4 text-4xl">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Connection Error</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-500">
+            Make sure the backend server is running on port 3001
+          </p>
         </div>
       </div>
     );

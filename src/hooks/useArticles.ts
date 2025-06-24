@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Article } from '@/types/Article';
 import { apiService } from '@/services/api';
-import { mockArticles } from '@/data/mockArticles';
-import { env } from '@/config/environment';
 
 export const useArticles = () => {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -14,23 +12,14 @@ export const useArticles = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('Loading articles from API...');
       
-      // In production, try to load from API first, fallback to mock data
-      if (env.production) {
-        try {
-          const data = await apiService.getArticles();
-          setArticles(data);
-        } catch (apiError) {
-          console.warn('API not available, using mock data');
-          setArticles(mockArticles);
-        }
-      } else {
-        // In development, use mock data
-        setArticles(mockArticles);
-      }
+      const data = await apiService.getArticles();
+      console.log('Articles loaded:', data);
+      setArticles(data);
     } catch (err) {
-      setError('Failed to load articles');
-      setArticles(mockArticles); // Fallback to mock data
+      console.error('Failed to load articles:', err);
+      setError('Failed to load articles from database');
     } finally {
       setLoading(false);
     }
@@ -38,38 +27,18 @@ export const useArticles = () => {
 
   const saveArticle = async (articleData: Partial<Article>) => {
     try {
-      if (env.production) {
-        if (articleData.id) {
-          const updatedArticle = await apiService.updateArticle(articleData.id, articleData);
-          setArticles(prev => prev.map(a => 
-            a.id === articleData.id ? updatedArticle : a
-          ));
-        } else {
-          const newArticle = await apiService.createArticle(articleData);
-          setArticles(prev => [newArticle, ...prev]);
-        }
+      console.log('Saving article:', articleData);
+      
+      if (articleData.id) {
+        const updatedArticle = await apiService.updateArticle(articleData.id, articleData);
+        setArticles(prev => prev.map(a => 
+          a.id === articleData.id ? updatedArticle : a
+        ));
+        console.log('Article updated:', updatedArticle);
       } else {
-        // Local mock data handling
-        if (articleData.id) {
-          setArticles(prev => prev.map(a => 
-            a.id === articleData.id ? { ...a, ...articleData, lastUpdated: new Date().toISOString().split('T')[0] } : a
-          ));
-        } else {
-          const newArticle: Article = {
-            id: Date.now().toString(),
-            title: articleData.title || '',
-            content: articleData.content || '',
-            excerpt: articleData.excerpt || '',
-            category: articleData.category || '',
-            author: articleData.author || 'Admin',
-            createdAt: new Date().toISOString().split('T')[0],
-            lastUpdated: new Date().toISOString().split('T')[0],
-            views: 0,
-            tags: articleData.tags || [],
-            published: true
-          };
-          setArticles(prev => [newArticle, ...prev]);
-        }
+        const newArticle = await apiService.createArticle(articleData);
+        setArticles(prev => [newArticle, ...prev]);
+        console.log('Article created:', newArticle);
       }
     } catch (err) {
       console.error('Failed to save article:', err);
@@ -79,10 +48,10 @@ export const useArticles = () => {
 
   const deleteArticle = async (id: string) => {
     try {
-      if (env.production) {
-        await apiService.deleteArticle(id);
-      }
+      console.log('Deleting article:', id);
+      await apiService.deleteArticle(id);
       setArticles(prev => prev.filter(a => a.id !== id));
+      console.log('Article deleted successfully');
     } catch (err) {
       console.error('Failed to delete article:', err);
       throw new Error('Failed to delete article');
@@ -91,9 +60,8 @@ export const useArticles = () => {
 
   const incrementViews = async (id: string) => {
     try {
-      if (env.production) {
-        await apiService.incrementViews(id);
-      }
+      console.log('Incrementing views for article:', id);
+      await apiService.incrementViews(id);
       setArticles(prev => prev.map(a => 
         a.id === id ? { ...a, views: a.views + 1 } : a
       ));
