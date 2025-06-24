@@ -5,11 +5,12 @@ import CategoryFilter from '@/components/CategoryFilter';
 import ArticleCard from '@/components/ArticleCard';
 import ArticleView from '@/components/ArticleView';
 import AdminPanel from '@/components/AdminPanel';
-import { mockArticles, categories } from '@/data/mockArticles';
+import { categories } from '@/data/mockArticles';
 import { Article } from '@/types/Article';
+import { useArticles } from '@/hooks/useArticles';
 
 const Index = () => {
-  const [articles, setArticles] = useState<Article[]>(mockArticles);
+  const { articles, loading, error, saveArticle, deleteArticle, incrementViews } = useArticles();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -38,11 +39,8 @@ const Index = () => {
     setSelectedCategory(category);
   };
 
-  const handleArticleSelect = (article: Article) => {
-    // Increment view count
-    setArticles(prev => prev.map(a => 
-      a.id === article.id ? { ...a, views: a.views + 1 } : a
-    ));
+  const handleArticleSelect = async (article: Article) => {
+    await incrementViews(article.id);
     setSelectedArticle(article);
   };
 
@@ -55,34 +53,27 @@ const Index = () => {
     setSelectedArticle(null);
   };
 
-  const handleSaveArticle = (articleData: Partial<Article>) => {
-    if (articleData.id) {
-      // Update existing article
-      setArticles(prev => prev.map(a => 
-        a.id === articleData.id ? { ...a, ...articleData, lastUpdated: new Date().toISOString().split('T')[0] } : a
-      ));
-    } else {
-      // Create new article
-      const newArticle: Article = {
-        id: Date.now().toString(),
-        title: articleData.title || '',
-        content: articleData.content || '',
-        excerpt: articleData.excerpt || '',
-        category: articleData.category || categories[0],
-        author: articleData.author || 'Admin',
-        createdAt: new Date().toISOString().split('T')[0],
-        lastUpdated: new Date().toISOString().split('T')[0],
-        views: 0,
-        tags: articleData.tags || [],
-        published: true
-      };
-      setArticles(prev => [newArticle, ...prev]);
-    }
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading articles...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleDeleteArticle = (id: string) => {
-    setArticles(prev => prev.filter(a => a.id !== id));
-  };
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -97,8 +88,8 @@ const Index = () => {
           <AdminPanel
             articles={articles}
             categories={categories}
-            onSaveArticle={handleSaveArticle}
-            onDeleteArticle={handleDeleteArticle}
+            onSaveArticle={saveArticle}
+            onDeleteArticle={deleteArticle}
           />
         ) : selectedArticle ? (
           <ArticleView
